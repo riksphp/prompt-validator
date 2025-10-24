@@ -140,3 +140,167 @@ Return ONLY the JSON object, no other text.`;
 
 // Legacy exports for backward compatibility
 export { saveAISettings as saveAPISettings } from "./aiSettingsStorage";
+
+// Context extraction
+export async function extractContext(prompt: string): Promise<any> {
+  const settings = await getAISettings();
+  const { apiKey, apiUrl } = settings;
+
+  if (!apiKey || !apiUrl) {
+    throw new Error("API not configured");
+  }
+
+  const extractionPrompt = `Extract structured information from the following user prompt.
+Analyze and extract:
+
+1. **Personal Info**: name, location, age, goals, interests, language preference
+2. **Professional Info**: job title, domain, company, ongoing projects, tech stack, experience
+3. **Task Context**: what they're currently working on
+4. **Intent**: what the prompt is trying to achieve, intent type (question/instruction/creative/code/analysis)
+5. **Tone/Personality**: preferred style, tone (concise/detailed/casual/professional/technical), verbosity
+6. **External Context**: tools, APIs, file names, URLs, frameworks, libraries mentioned
+7. **Tags**: auto-generate relevant keywords (max 5)
+8. **Prompt Type**: classify as question, instruction, creative, or code
+9. **Confidence Score**: 0-1 score for how much context you could extract
+
+Return ONLY valid JSON with this structure:
+{
+  "personalInfo": { "name": "", "location": "", "goals": [], "interests": [] },
+  "professionalInfo": { "jobTitle": "", "domain": "", "company": "", "ongoingProjects": [], "techStack": [] },
+  "taskContext": { "currentTask": "" },
+  "intent": { "primaryIntent": "", "intentType": "" },
+  "tonePersonality": { "tone": "", "style": "", "verbosity": "" },
+  "externalContext": { "tools": [], "frameworks": [], "libraries": [] },
+  "tags": [],
+  "promptType": "",
+  "confidenceScore": 0.0
+}
+
+Only include fields where you found actual information. Omit empty fields.
+
+User Prompt:
+"""
+${prompt}
+"""
+
+Return ONLY the JSON object, no other text.`;
+
+  try {
+    const url = apiUrl.includes("?")
+      ? `${apiUrl}&key=${apiKey}`
+      : `${apiUrl}?key=${apiKey}`;
+
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        contents: [
+          {
+            parts: [{ text: extractionPrompt }],
+          },
+        ],
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    const aiResponse = data.candidates?.[0]?.content?.parts?.[0]?.text;
+
+    if (!aiResponse) {
+      throw new Error("No response from AI");
+    }
+
+    return ensureJsonObject(aiResponse);
+  } catch (error) {
+    console.error("Context extraction error:", error);
+    // Return minimal context on error
+    return {
+      tags: [],
+      promptType: "instruction",
+      confidenceScore: 0,
+    };
+  }
+}
+
+// Generate improved prompt based on user context
+export async function generateImprovedPrompt(
+  originalPrompt: string,
+  contextSummary: string
+): Promise<any> {
+  const settings = await getAISettings();
+  const { apiKey, apiUrl } = settings;
+
+  if (!apiKey || !apiUrl) {
+    throw new Error("API not configured");
+  }
+
+  const improvementPrompt = `You are a Prompt Engineering Expert. 
+Given the user's original prompt and their accumulated context/profile, generate an improved version of the prompt.
+
+**User Context:**
+${contextSummary}
+
+**Original Prompt:**
+"""
+${originalPrompt}
+"""
+
+**Your Task:**
+1. Incorporate relevant context to make the prompt more personalized
+2. Make it more specific and actionable
+3. Add structure and clarity
+4. Ensure it follows prompt engineering best practices
+5. List specific improvements made
+6. Explain your reasoning
+
+Return ONLY valid JSON:
+{
+  "improvedPrompt": "the enhanced prompt here",
+  "improvements": ["list of specific improvements made"],
+  "reasoning": "why these changes improve the prompt",
+  "contextUsed": ["which context elements were incorporated"]
+}
+
+Return ONLY the JSON object, no other text.`;
+
+  try {
+    const url = apiUrl.includes("?")
+      ? `${apiUrl}&key=${apiKey}`
+      : `${apiUrl}?key=${apiKey}`;
+
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        contents: [
+          {
+            parts: [{ text: improvementPrompt }],
+          },
+        ],
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    const aiResponse = data.candidates?.[0]?.content?.parts?.[0]?.text;
+
+    if (!aiResponse) {
+      throw new Error("No response from AI");
+    }
+
+    return ensureJsonObject(aiResponse);
+  } catch (error) {
+    console.error("Prompt improvement error:", error);
+    throw error;
+  }
+}
