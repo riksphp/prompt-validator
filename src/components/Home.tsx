@@ -1,90 +1,60 @@
 import { useState } from "react";
 import {
-  validatePrompt,
-  extractContext,
-  generateImprovedPrompt,
-} from "../services/llmClient";
+  orchestratePromptProcessing,
+  getOrchestrationStatus,
+  getActionDisplayName,
+  OrchestrationResult,
+  OrchestrationStep,
+} from "../services/intelligentOrchestrator";
 import { PromptValidationResult } from "../types";
-import { ExtractedContext, ImprovedPromptSuggestion } from "../types/context";
-import {
-  updateUserContext,
-  getContextSummary,
-  getUserContext,
-  clearUserContext,
-} from "../services/contextStorage";
+import { clearUserContext } from "../services/contextStorage";
+import { type PromptHistoryEntry } from "../services/promptHistoryStorage";
 import SettingsPage from "./SettingsPage";
+import HistoryPanel from "./HistoryPanel";
 import styles from "./Home.module.css";
 
 export default function Home() {
   const [prompt, setPrompt] = useState("");
-  const [result, setResult] = useState<PromptValidationResult | null>(null);
-  const [extractedContext, setExtractedContext] =
-    useState<ExtractedContext | null>(null);
-  const [improvedPrompt, setImprovedPrompt] =
-    useState<ImprovedPromptSuggestion | null>(null);
+  const [orchestrationResult, setOrchestrationResult] =
+    useState<OrchestrationResult | null>(null);
   const [loading, setLoading] = useState(false);
-  const [extractingContext, setExtractingContext] = useState(false);
-  const [generatingImprovement, setGeneratingImprovement] = useState(false);
+  const [currentStep, setCurrentStep] = useState<string>("");
+  const [liveSteps, setLiveSteps] = useState<OrchestrationStep[]>([]);
   const [error, setError] = useState("");
   const [showSettings, setShowSettings] = useState(false);
-  const [showContextPanel, setShowContextPanel] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
 
-  const handleValidate = async () => {
+  const handleIntelligentProcessing = async () => {
     if (!prompt.trim()) {
-      setError("Please enter a prompt to validate");
+      setError("Please enter a prompt to analyze");
       return;
     }
 
     setLoading(true);
     setError("");
-    setResult(null);
-    setExtractedContext(null);
-    setImprovedPrompt(null);
+    setOrchestrationResult(null);
+    setLiveSteps([]);
+    setCurrentStep("🧠 Starting intelligent analysis...");
 
     try {
-      // Step 1: Validate the prompt
-      const validationResult = await validatePrompt(prompt);
-      setResult(validationResult);
+      // Process with real-time step updates
+      const result = await orchestratePromptProcessing(
+        prompt,
+        (step: OrchestrationStep) => {
+          setCurrentStep(
+            `${getActionDisplayName(step.action)}: ${step.decision.reasoning}`
+          );
+          setLiveSteps((prev) => [...prev, step]);
+        }
+      );
 
-      // Step 2: Extract context from the prompt
-      setExtractingContext(true);
-      try {
-        const context = await extractContext(prompt);
-        setExtractedContext(context);
-
-        // Step 3: Update stored user context
-        await updateUserContext(context, prompt, validationResult);
-      } catch (ctxError) {
-        console.error("Context extraction failed:", ctxError);
-        // Don't fail the whole validation if context extraction fails
-      } finally {
-        setExtractingContext(false);
-      }
+      setOrchestrationResult(result);
+      setCurrentStep(getOrchestrationStatus(result));
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred");
+      setCurrentStep("❌ Processing failed");
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleGenerateImprovedPrompt = async () => {
-    if (!prompt) return;
-
-    setGeneratingImprovement(true);
-    setError("");
-
-    try {
-      const contextSummary = await getContextSummary();
-      const improvement = await generateImprovedPrompt(prompt, contextSummary);
-      setImprovedPrompt(improvement);
-    } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Failed to generate improved prompt"
-      );
-    } finally {
-      setGeneratingImprovement(false);
     }
   };
 
@@ -99,9 +69,74 @@ export default function Home() {
     }
   };
 
-  const renderExtractedContext = () => {
-    if (!extractedContext) return null;
+  const handleSelectHistoryPrompt = (entry: PromptHistoryEntry) => {
+    // Use the improved prompt if available, otherwise the original
+    const promptToUse =
+      entry.improvedPrompt?.improvedPrompt || entry.originalPrompt;
+    setPrompt(promptToUse);
+    setShowHistory(false);
+    setOrchestrationResult(null);
+    setLiveSteps([]);
+  };
 
+  const renderLiveSteps = () => {
+    if (liveSteps.length === 0) return null;
+
+    return (
+      <div className={styles.liveStepsContainer}>
+        <h3 className={styles.liveStepsTitle}>
+          <span className={styles.liveStepsIcon}>🔄</span>
+          Processing Steps
+        </h3>
+
+        <div className={styles.stepsList}>
+          {liveSteps.map((step, idx) => (
+            <div
+              key={idx}
+              className={`${styles.stepItem} ${
+                step.error ? styles.stepError : styles.stepSuccess
+              }`}
+            >
+              <div className={styles.stepHeader}>
+                <span className={styles.stepNumber}>Step {idx + 1}</span>
+                <span className={styles.stepAction}>
+                  {getActionDisplayName(step.action)}
+                </span>
+                {step.decision.progress && (
+                  <span className={styles.stepProgress}>
+                    {step.decision.progress}
+                  </span>
+                )}
+              </div>
+
+              <div className={styles.stepReasoning}>
+                <strong>Reasoning:</strong> {step.decision.reasoning}
+              </div>
+
+              {step.error && (
+                <div className={styles.stepErrorMessage}>
+                  <span className={styles.errorIcon}>❌</span>
+                  {step.error}
+                </div>
+              )}
+
+              {step.result && !step.error && (
+                <div className={styles.stepResult}>
+                  <span className={styles.successIcon}>✅</span>
+                  Completed successfully
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
+  const renderExtractedContext = () => {
+    if (!orchestrationResult?.extractedContext) return null;
+
+    const extractedContext = orchestrationResult.extractedContext;
     const hasContext =
       extractedContext.personalInfo ||
       extractedContext.professionalInfo ||
@@ -116,11 +151,7 @@ export default function Home() {
       <div className={styles.contextCard}>
         <h3 className={styles.contextTitle}>
           <span className={styles.contextIcon}>🧩</span>
-          Extracted Context
-          <span className={styles.confidenceBadge}>
-            Confidence:{" "}
-            {((extractedContext.confidenceScore || 0) * 100).toFixed(0)}%
-          </span>
+          Extracted & Saved Context
         </h3>
 
         <div className={styles.contextGrid}>
@@ -167,7 +198,9 @@ export default function Home() {
                     value && (
                       <li key={key}>
                         <strong>{key}:</strong>{" "}
-                        {Array.isArray(value) ? value.length + " tasks" : value}
+                        {typeof value === "string"
+                          ? value
+                          : JSON.stringify(value)}
                       </li>
                     )
                 )}
@@ -183,7 +216,8 @@ export default function Home() {
                   ([key, value]) =>
                     value && (
                       <li key={key}>
-                        <strong>{key}:</strong> {value}
+                        <strong>{key}:</strong>{" "}
+                        {Array.isArray(value) ? value.join(", ") : value}
                       </li>
                     )
                 )}
@@ -193,7 +227,7 @@ export default function Home() {
 
           {extractedContext.tonePersonality && (
             <div className={styles.contextSection}>
-              <h4>🎨 Tone & Style</h4>
+              <h4>🎨 Tone/Personality</h4>
               <ul>
                 {Object.entries(extractedContext.tonePersonality).map(
                   ([key, value]) =>
@@ -214,11 +248,10 @@ export default function Home() {
               <ul>
                 {Object.entries(extractedContext.externalContext).map(
                   ([key, value]) =>
-                    value &&
-                    Array.isArray(value) &&
-                    value.length > 0 && (
+                    value && (
                       <li key={key}>
-                        <strong>{key}:</strong> {value.join(", ")}
+                        <strong>{key}:</strong>{" "}
+                        {Array.isArray(value) ? value.join(", ") : value}
                       </li>
                     )
                 )}
@@ -242,7 +275,9 @@ export default function Home() {
   };
 
   const renderImprovedPrompt = () => {
-    if (!improvedPrompt) return null;
+    if (!orchestrationResult?.improvedPrompt) return null;
+
+    const improvedPrompt = orchestrationResult.improvedPrompt;
 
     return (
       <div className={styles.improvedPromptCard}>
@@ -256,28 +291,36 @@ export default function Home() {
         </div>
 
         <div className={styles.improvementDetails}>
-          <div className={styles.improvementSection}>
-            <h4>📝 Improvements Made:</h4>
-            <ul>
-              {improvedPrompt.improvements.map((improvement, idx) => (
-                <li key={idx}>{improvement}</li>
-              ))}
-            </ul>
-          </div>
+          {improvedPrompt.improvements && (
+            <div className={styles.improvementSection}>
+              <h4>📝 Improvements Made:</h4>
+              <ul>
+                {improvedPrompt.improvements.map(
+                  (improvement: string, idx: number) => (
+                    <li key={idx}>{improvement}</li>
+                  )
+                )}
+              </ul>
+            </div>
+          )}
 
-          <div className={styles.improvementSection}>
-            <h4>💡 Reasoning:</h4>
-            <p>{improvedPrompt.reasoning}</p>
-          </div>
+          {improvedPrompt.reasoning && (
+            <div className={styles.improvementSection}>
+              <h4>💡 Reasoning:</h4>
+              <p>{improvedPrompt.reasoning}</p>
+            </div>
+          )}
 
           {improvedPrompt.contextUsed &&
             improvedPrompt.contextUsed.length > 0 && (
               <div className={styles.improvementSection}>
                 <h4>🧩 Context Used:</h4>
                 <ul>
-                  {improvedPrompt.contextUsed.map((ctx, idx) => (
-                    <li key={idx}>{ctx}</li>
-                  ))}
+                  {improvedPrompt.contextUsed.map(
+                    (ctx: string, idx: number) => (
+                      <li key={idx}>{ctx}</li>
+                    )
+                  )}
                 </ul>
               </div>
             )}
@@ -286,9 +329,8 @@ export default function Home() {
         <button
           onClick={() => {
             setPrompt(improvedPrompt.improvedPrompt);
-            setImprovedPrompt(null);
-            setResult(null);
-            setExtractedContext(null);
+            setOrchestrationResult(null);
+            setLiveSteps([]);
           }}
           className={styles.useImprovedButton}
         >
@@ -298,9 +340,10 @@ export default function Home() {
     );
   };
 
-  const renderResult = () => {
-    if (!result) return null;
+  const renderValidationResult = () => {
+    if (!orchestrationResult?.validationResult) return null;
 
+    const result = orchestrationResult.validationResult;
     const fields = [
       { key: "explicit_reasoning", label: "Explicit Reasoning", icon: "🧠" },
       { key: "structured_output", label: "Structured Output", icon: "📋" },
@@ -325,86 +368,70 @@ export default function Home() {
     ];
 
     return (
-      <div className={styles.resultsContainer}>
-        <div className={styles.resultCard}>
-          <h2 className={styles.resultTitle}>
-            <span className={styles.resultIcon}>📊</span>
-            Validation Results
-          </h2>
+      <div className={styles.resultCard}>
+        <h2 className={styles.resultTitle}>
+          <span className={styles.resultIcon}>📊</span>
+          Prompt Validation Results
+        </h2>
 
-          <div className={styles.resultGrid}>
-            {fields.map(({ key, label, icon }) => (
-              <div
-                key={key}
-                className={`${styles.resultItem} ${
-                  result[
-                    key as keyof Omit<PromptValidationResult, "overall_clarity">
-                  ]
-                    ? styles.success
-                    : styles.error
-                }`}
-              >
-                <span className={styles.criteriaIcon}>{icon}</span>
-                <div className={styles.criteriaContent}>
-                  <span className={styles.criteriaLabel}>{label}</span>
-                  <span className={styles.criteriaValue}>
-                    {result[
-                      key as keyof Omit<
-                        PromptValidationResult,
-                        "overall_clarity"
-                      >
-                    ]
-                      ? "✓ Yes"
-                      : "✗ No"}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div className={styles.claritySection}>
-            <h3 className={styles.clarityTitle}>
-              <span className={styles.clarityIcon}>💡</span>
-              Overall Clarity
-            </h3>
-            <p className={styles.clarityText}>{result.overall_clarity}</p>
-          </div>
-
-          <div className={styles.actionButtons}>
-            <button
-              onClick={handleGenerateImprovedPrompt}
-              disabled={generatingImprovement}
-              className={styles.improveButton}
+        <div className={styles.criteriaGrid}>
+          {fields.map(({ key, label, icon }) => (
+            <div
+              key={key}
+              className={`${styles.criteriaItem} ${
+                result[
+                  key as keyof Omit<PromptValidationResult, "overall_clarity">
+                ]
+                  ? styles.criteriaItemSuccess
+                  : styles.criteriaItemError
+              }`}
             >
-              {generatingImprovement ? (
-                <>
-                  <span className={styles.spinner}>⏳</span>
-                  Generating...
-                </>
-              ) : (
-                <>
-                  <span className={styles.buttonIcon}>✨</span>
-                  Generate Improved Prompt
-                </>
-              )}
-            </button>
-
-            <button
-              onClick={() => setResult(null)}
-              className={styles.resetButton}
-            >
-              🔄 Validate Another Prompt
-            </button>
-          </div>
+              <span className={styles.criteriaIcon}>{icon}</span>
+              <span className={styles.criteriaLabel}>{label}:</span>
+              <span className={styles.criteriaValue}>
+                {result[
+                  key as keyof Omit<PromptValidationResult, "overall_clarity">
+                ]
+                  ? "✓ Yes"
+                  : "✗ No"}
+              </span>
+            </div>
+          ))}
         </div>
 
-        {extractingContext && (
-          <div className={styles.loadingContext}>
-            <span className={styles.spinner}>⏳</span>
-            Extracting context...
-          </div>
-        )}
+        <div className={styles.claritySection}>
+          <h3 className={styles.clarityTitle}>
+            <span className={styles.clarityIcon}>✨</span>
+            Overall Clarity
+          </h3>
+          <p className={styles.clarityText}>{result.overall_clarity}</p>
+        </div>
+      </div>
+    );
+  };
 
+  const renderResult = () => {
+    if (!orchestrationResult) return null;
+
+    return (
+      <div className={styles.resultsContainer}>
+        <div className={styles.statusSummary}>
+          <h2 className={styles.statusTitle}>
+            {currentStep || getOrchestrationStatus(orchestrationResult)}
+          </h2>
+          <button
+            onClick={() => {
+              setOrchestrationResult(null);
+              setLiveSteps([]);
+            }}
+            className={styles.resetButton}
+          >
+            🔄 Analyze Another Prompt
+          </button>
+        </div>
+
+        {renderLiveSteps()}
+        {renderValidationResult()}
         {renderExtractedContext()}
         {renderImprovedPrompt()}
       </div>
@@ -417,27 +444,30 @@ export default function Home() {
         <div className={styles.header}>
           <div className={styles.headerContent}>
             <h1 className={styles.title}>
-              <span className={styles.titleIcon}>✨</span>
-              Prompt Validator
+              <span className={styles.titleIcon}>✨</span>Prompt Validator
             </h1>
             <p className={styles.subtitle}>
-              Analyze, improve, and learn from your prompts with AI-powered
-              validation
+              Sequential AI-powered prompt analysis - LLM decides each step.
             </p>
           </div>
           <div className={styles.headerButtons}>
             <button
-              onClick={() => setShowContextPanel(true)}
-              className={styles.contextButton}
-              title="View Stored Context"
+              onClick={() => setShowHistory(true)}
+              className={styles.historyButton}
             >
-              <span className={styles.settingsIcon}>🧩</span>
-              My Context
+              <span className={styles.buttonIcon}>📜</span>
+              History
+            </button>
+            <button
+              onClick={handleClearContext}
+              className={styles.contextButton}
+            >
+              <span className={styles.buttonIcon}>🗑️</span>
+              Clear Context
             </button>
             <button
               onClick={() => setShowSettings(true)}
               className={styles.settingsButton}
-              title="Settings"
             >
               <span className={styles.settingsIcon}>⚙️</span>
               Settings
@@ -445,11 +475,11 @@ export default function Home() {
           </div>
         </div>
 
-        {!result ? (
+        {!orchestrationResult ? (
           <div className={styles.inputCard}>
             <label className={styles.inputLabel} htmlFor="prompt">
               <span className={styles.labelIcon}>📝</span>
-              Enter your prompt to validate
+              Enter your prompt for sequential intelligent analysis
             </label>
             <textarea
               id="prompt"
@@ -457,7 +487,15 @@ export default function Home() {
               onChange={(e) => setPrompt(e.target.value)}
               placeholder="Type or paste your prompt here...
 
-Example: You are an expert code reviewer. Analyze the following code and provide structured feedback with clear explanations..."
+Example: I work with React and TypeScript. Help me build a user authentication system with proper error handling.
+
+The AI will:
+1. Call routePrompt() → decide first action
+2. Execute that action (e.g., validate)
+3. Call routePrompt() again → decide next action
+4. Execute (e.g., extract professional info)
+5. Repeat until complete
+6. Finally generate improvement based on all saved data"
               rows={10}
               className={styles.textarea}
             />
@@ -469,34 +507,44 @@ Example: You are an expert code reviewer. Analyze the following code and provide
               </div>
             )}
 
+            {currentStep && loading && (
+              <div className={styles.statusMessage}>
+                <span className={styles.spinner}>⏳</span>
+                {currentStep}
+              </div>
+            )}
+
             <button
-              onClick={handleValidate}
+              onClick={handleIntelligentProcessing}
               disabled={loading}
               className={styles.validateButton}
             >
               {loading ? (
                 <>
                   <span className={styles.spinner}>⏳</span>
-                  Validating...
+                  Processing...
                 </>
               ) : (
                 <>
-                  <span className={styles.buttonIcon}>🚀</span>
-                  Validate & Extract Context
+                  <span className={styles.buttonIcon}>🧠</span>
+                  Sequential Analysis
                 </>
               )}
             </button>
 
             <div className={styles.infoBox}>
               <p className={styles.infoTitle}>
-                <span className={styles.infoIcon}>ℹ️</span>
-                What happens when you validate?
+                <span className={styles.infoIcon}>🤖</span>
+                How Sequential Analysis Works
               </p>
               <ul className={styles.infoList}>
-                <li>🧠 Validates prompt quality (8 criteria)</li>
-                <li>🧩 Extracts context (personal, professional, task info)</li>
-                <li>💾 Stores learning for future improvements</li>
-                <li>✨ Suggests improved version based on your history</li>
+                <li>🧠 LLM Router called repeatedly</li>
+                <li>📍 Each call decides ONE next action</li>
+                <li>✅ Execute that action</li>
+                <li>🔄 Call router again with updated history</li>
+                <li>🎯 Router considers what's already done</li>
+                <li>✨ Improvement generated at the end</li>
+                <li>💾 All context saved automatically</li>
               </ul>
             </div>
           </div>
@@ -506,97 +554,12 @@ Example: You are an expert code reviewer. Analyze the following code and provide
       </div>
 
       {showSettings && <SettingsPage onClose={() => setShowSettings(false)} />}
-
-      {showContextPanel && (
-        <ContextPanel
-          onClose={() => setShowContextPanel(false)}
-          onClear={handleClearContext}
+      {showHistory && (
+        <HistoryPanel
+          onClose={() => setShowHistory(false)}
+          onSelectPrompt={handleSelectHistoryPrompt}
         />
       )}
-    </div>
-  );
-}
-
-// Context Panel Component
-function ContextPanel({
-  onClose,
-  onClear,
-}: {
-  onClose: () => void;
-  onClear: () => void;
-}) {
-  const [context, setContext] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-
-  useState(() => {
-    getUserContext().then((ctx) => {
-      setContext(ctx);
-      setLoading(false);
-    });
-  });
-
-  if (loading) {
-    return (
-      <div className={styles.overlay} onClick={onClose}>
-        <div
-          className={styles.contextPanelContainer}
-          onClick={(e) => e.stopPropagation()}
-        >
-          <div className={styles.loading}>Loading context...</div>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className={styles.overlay} onClick={onClose}>
-      <div
-        className={styles.contextPanelContainer}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className={styles.panelHeader}>
-          <h2>🧩 Your Stored Context</h2>
-          <button onClick={onClose} className={styles.closeButton}>
-            ×
-          </button>
-        </div>
-
-        <div className={styles.panelContent}>
-          <div className={styles.contextStats}>
-            <div className={styles.stat}>
-              <span className={styles.statNumber}>
-                {context?.metadata?.length || 0}
-              </span>
-              <span className={styles.statLabel}>Prompts Analyzed</span>
-            </div>
-            <div className={styles.stat}>
-              <span className={styles.statNumber}>
-                {context?.professionalInfo?.techStack?.length || 0}
-              </span>
-              <span className={styles.statLabel}>Technologies</span>
-            </div>
-            <div className={styles.stat}>
-              <span className={styles.statNumber}>
-                {context?.externalContext?.tools?.length || 0}
-              </span>
-              <span className={styles.statLabel}>Tools</span>
-            </div>
-          </div>
-
-          <pre className={styles.contextData}>
-            {JSON.stringify(context, null, 2)}
-          </pre>
-        </div>
-
-        <div className={styles.panelActions}>
-          <button onClick={onClear} className={styles.clearButton}>
-            🗑️ Clear All Context
-          </button>
-          <button onClick={onClose} className={styles.cancelButton}>
-            Close
-          </button>
-        </div>
-      </div>
     </div>
   );
 }

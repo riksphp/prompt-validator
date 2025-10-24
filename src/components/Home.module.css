@@ -50,7 +50,9 @@
   line-height: 1.5;
 }
 
-.settingsButton {
+.settingsButton,
+.historyButton,
+.contextButton {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -66,10 +68,17 @@
 }
 
 .contextButton:hover,
-.settingsButton:hover {
+.settingsButton:hover,
+.historyButton:hover {
   background: rgba(255, 255, 255, 0.2);
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(96, 165, 250, 0.2);
+}
+
+.headerButtons {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 
 .settingsIcon {
@@ -870,6 +879,87 @@
   color: #a1a1aa;
 }
 
+/* Router Decision Card */
+.routerCard {
+  background: linear-gradient(
+    145deg,
+    rgba(139, 92, 246, 0.1),
+    rgba(124, 58, 237, 0.1)
+  );
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  border-radius: 12px;
+  padding: 24px;
+  animation: fadeInUp 0.4s ease-out;
+  margin-bottom: 24px;
+}
+
+.routerTitle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 20px;
+  font-weight: 600;
+  color: #8b5cf6;
+  margin: 0 0 16px 0;
+}
+
+.routerIcon {
+  font-size: 24px;
+}
+
+.routerReasoning {
+  font-size: 15px;
+  color: #e6edf3;
+  line-height: 1.6;
+  margin: 0 0 20px 0;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  border-left: 3px solid #8b5cf6;
+}
+
+.routerActions h4 {
+  font-size: 14px;
+  font-weight: 600;
+  color: #a1a1aa;
+  margin: 0 0 12px 0;
+}
+
+.actionsList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.actionBadge {
+  padding: 6px 14px;
+  background: rgba(139, 92, 246, 0.2);
+  border: 1px solid rgba(139, 92, 246, 0.4);
+  border-radius: 16px;
+  font-size: 13px;
+  color: #a78bfa;
+  font-weight: 500;
+}
+
+/* Status Message */
+.statusMessage {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  background: rgba(96, 165, 250, 0.1);
+  border: 1px solid rgba(96, 165, 250, 0.3);
+  border-radius: 8px;
+  color: #60a5fa;
+  font-size: 14px;
+  margin-bottom: 16px;
+}
+
+.statusIcon {
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
 /* Responsive design */
 @media (max-width: 768px) {
   .container {
@@ -921,5 +1011,152 @@
 
 [data-extension="true"] .subtitle {
   font-size: 13px;
+}
+
+/* Live Steps Container */
+.liveStepsContainer {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(139, 92, 246, 0.1));
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  border-radius: 16px;
+  padding: 2rem;
+  margin-top: 2rem;
+  backdrop-filter: blur(10px);
+}
+
+.liveStepsTitle {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #a78bfa;
+  margin: 0 0 1.5rem 0;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.liveStepsIcon {
+  font-size: 1.75rem;
+  animation: spin 2s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.stepsList {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.stepItem {
+  background: rgba(17, 24, 39, 0.6);
+  border-radius: 12px;
+  padding: 1.25rem;
+  border-left: 4px solid;
+  transition: all 0.3s ease;
+}
+
+.stepSuccess {
+  border-left-color: #10b981;
+}
+
+.stepError {
+  border-left-color: #ef4444;
+}
+
+.stepHeader {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.stepNumber {
+  background: rgba(139, 92, 246, 0.2);
+  color: #a78bfa;
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.stepAction {
+  color: #f3f4f6;
+  font-weight: 600;
+  font-size: 1rem;
+  flex: 1;
+}
+
+.stepProgress {
+  color: #9ca3af;
+  font-size: 0.875rem;
+  font-style: italic;
+}
+
+.stepReasoning {
+  color: #d1d5db;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  padding: 0.75rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  margin-bottom: 0.75rem;
+}
+
+.stepReasoning strong {
+  color: #a78bfa;
+}
+
+.stepResult {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #10b981;
+  font-weight: 500;
+  padding: 0.5rem;
+  background: rgba(16, 185, 129, 0.1);
+  border-radius: 6px;
+}
+
+.stepErrorMessage {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #ef4444;
+  font-weight: 500;
+  padding: 0.5rem;
+  background: rgba(239, 68, 68, 0.1);
+  border-radius: 6px;
+}
+
+.successIcon,
+.errorIcon {
+  font-size: 1.25rem;
+}
+
+.statusSummary {
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.15), rgba(59, 130, 246, 0.15));
+  border-radius: 16px;
+  padding: 2rem;
+  margin-bottom: 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  border: 1px solid rgba(139, 92, 246, 0.3);
+}
+
+.statusTitle {
+  font-size: 1.25rem;
+  color: #f3f4f6;
+  margin: 0;
+  flex: 1;
 }
 

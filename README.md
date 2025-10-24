@@ -1,28 +1,62 @@
 # Prompt Validator
 
-A minimal Chrome Extension and Web App that validates prompts using LLM and provides structured analysis.
+A Chrome Extension and Web App with **sequential AI-powered analysis** - where an LLM router intelligently decides each processing step.
 
-## 🎯 Features
+## 🎯 Key Features
 
+- 🧠 **Sequential LLM Router**: AI decides the next action step-by-step
 - ✅ **Prompt Validation**: Analyze prompts for quality and structure
-- ✅ **LLM Integration**: Uses Google Gemini API (or custom LLM)
-- ✅ **Dual Mode**: Works as Chrome Extension AND standalone web app
-- ✅ **Structured Output**: Returns validation in JSON format
-- ✅ **Modern UI**: Built with React + TypeScript + Tailwind CSS
+- 👤 **Context Extraction**: Personal, professional, task, and external context
+- ✨ **Intelligent Improvement**: Generate enhanced prompts using accumulated context
+- 🔄 **Iterative Processing**: Router called repeatedly until complete
+- 📊 **Real-Time Progress**: See each decision and action as it happens
+- 💾 **Persistent Storage**: All context and prompts saved automatically to localStorage
+- 📜 **Prompt History**: View, search, and reuse past prompts with full analysis
+- 🎨 **Modern UI**: Dark glassmorphic design with live step visualization
+- 🔧 **Dual Mode**: Works as Chrome Extension AND standalone web app
 
-## 📋 Validation Criteria
+## 🧠 Sequential Router Architecture
 
-The tool analyzes prompts for:
+### **How It Works**
 
-- ✓ Explicit Reasoning
-- ✓ Structured Output
-- ✓ Tool Separation
-- ✓ Conversation Loop
-- ✓ Instructional Framing
-- ✓ Internal Self-Checks
-- ✓ Reasoning Type Awareness
-- ✓ Fallbacks
-- ✓ Overall Clarity Assessment
+Instead of deciding everything upfront, the system:
+
+1. **Calls `routePrompt()`** → LLM decides the first action
+2. **Executes that action** (e.g., validate prompt)
+3. **Calls `routePrompt()` again** → LLM decides the next action (knowing what's been done)
+4. **Executes next action** (e.g., extract professional info)
+5. **Repeats until complete** → LLM returns "done"
+
+### **Example Flow**
+
+```
+User Input: "I'm a React developer building an auth system"
+
+Step 1: routePrompt() → "validate" → ✅ Validates prompt quality
+Step 2: routePrompt() → "extractProfessional" → 💼 Extracts React/developer info
+Step 3: routePrompt() → "extractTask" → 📋 Extracts auth system task
+Step 4: routePrompt() → "extractExternal" → 🔧 Extracts React framework
+Step 5: routePrompt() → "extractTags" → 🏷️ Generates tags
+Step 6: routePrompt() → "generateImprovement" → ✨ Creates enhanced prompt
+Step 7: routePrompt() → "done" → 🎉 Complete!
+```
+
+## 📋 Available Actions
+
+The LLM router can choose from:
+
+| Action                | Icon | Description                              |
+| --------------------- | ---- | ---------------------------------------- |
+| `validate`            | ✅   | Validate prompt quality and structure    |
+| `extractPersonal`     | 👤   | Extract name, location, goals, interests |
+| `extractProfessional` | 💼   | Extract job, tech stack, projects        |
+| `extractTask`         | 📋   | Extract current task being worked on     |
+| `extractIntent`       | 🎯   | Extract primary goal and intent          |
+| `extractTone`         | 🎨   | Extract style and tone preferences       |
+| `extractExternal`     | 🔧   | Extract tools, frameworks, APIs          |
+| `extractTags`         | 🏷️   | Generate relevant keywords               |
+| `generateImprovement` | ✨   | Create improved prompt with context      |
+| `done`                | 🎉   | Signal completion                        |
 
 ## 🚀 Quick Start
 
@@ -34,19 +68,14 @@ The tool analyzes prompts for:
 
 ### Installation
 
-1. **Clone and navigate to project**
+1. **Install dependencies**
 
    ```bash
    cd prompt-validator
-   ```
-
-2. **Install dependencies**
-
-   ```bash
    npm install
    ```
 
-3. **Development (Web App)**
+2. **Development (Web App)**
 
    ```bash
    npm run dev
@@ -54,7 +83,8 @@ The tool analyzes prompts for:
 
    Open http://localhost:5173
 
-4. **Build for production**
+3. **Build for production**
+
    ```bash
    npm run build
    ```
@@ -78,7 +108,8 @@ The tool analyzes prompts for:
 3. **Configure API Key**
    - Click the extension icon
    - Click "Settings" ⚙️
-   - Enter your Gemini API key
+   - Select provider (Gemini, OpenAI, Groq, Custom)
+   - Enter your API key
    - Save settings
 
 ## 🏗️ Project Structure
@@ -87,153 +118,301 @@ The tool analyzes prompts for:
 prompt-validator/
 ├── src/
 │   ├── components/
-│   │   └── Home.tsx          # Main UI component
+│   │   ├── Home.tsx                    # Main UI with live steps
+│   │   ├── Home.module.css             # Modern dark theme
+│   │   ├── SettingsPage.tsx            # Comprehensive settings
+│   │   └── SettingsPage.module.css     # Settings styling
 │   ├── services/
-│   │   └── llmClient.ts       # LLM API integration
+│   │   ├── llmRouter.ts                # Sequential LLM router ⭐
+│   │   ├── intelligentOrchestrator.ts  # Iterative orchestration ⭐
+│   │   ├── llmClient.ts                # LLM API integration
+│   │   ├── contextStorage.ts           # Context persistence
+│   │   └── aiSettingsStorage.ts        # Settings management
 │   ├── types/
-│   │   └── index.ts           # TypeScript types
-│   ├── main.tsx               # App entry point
-│   └── styles.css             # Global styles
+│   │   ├── index.ts                    # Core types
+│   │   ├── context.ts                  # Context types
+│   │   └── chrome.d.ts                 # Chrome API types
+│   ├── main.tsx                        # App entry point
+│   └── styles.css                      # Global styles
 ├── public/
-│   └── manifest.json          # Chrome Extension manifest
-├── index.html
-├── vite.config.ts
-├── tailwind.config.js
-├── tsconfig.json
-└── package.json
+│   └── manifest.json                   # Chrome Extension manifest
+├── SEQUENTIAL_ROUTER.md                # 📖 Router architecture docs
+├── ARCHITECTURE.md                     # 📖 System architecture
+├── CONTEXT_FEATURE.md                  # 📖 Context extraction docs
+└── README.md                           # This file
 ```
 
 ## 🔧 Architecture
 
-Based on the **base-truths** project architecture with minimal components:
+### Core Components
 
-### Key Components
+1. **LLM Router (`llmRouter.ts`)**
 
-- **Home Component**: Input box + validation results display
-- **LLM Client**: Handles API communication with Gemini
-- **Storage Layer**: Chrome storage API + localStorage fallback
+   - Makes sequential decisions
+   - Sees what's already been done
+   - Returns ONE next action
+   - Provides reasoning for each decision
+
+2. **Intelligent Orchestrator (`intelligentOrchestrator.ts`)**
+
+   - Calls router iteratively
+   - Executes each action
+   - Tracks progress
+   - Updates UI in real-time
+
+3. **Context Storage (`contextStorage.ts`)**
+
+   - Persists extracted information
+   - Accumulates user context over time
+   - Provides context summary for improvements
+
+4. **UI Components (`Home.tsx`)**
+   - Live step visualization
+   - Router decision display
+   - Real-time progress updates
+   - Result presentation
 
 ### Tech Stack
 
 - **Frontend**: React 18 + TypeScript
 - **Build**: Vite
-- **Styling**: Tailwind CSS
-- **AI**: Google Gemini API
+- **Styling**: Tailwind CSS + CSS Modules
+- **AI**: Google Gemini API (or OpenAI, Groq, Custom)
 - **Storage**: Chrome Storage API / localStorage
 
 ## 📖 Usage
 
-1. **Enter Prompt**: Type or paste your prompt in the text area
-2. **Validate**: Click "Validate Prompt" button
-3. **Review Results**: See structured analysis with boolean flags and clarity assessment
-4. **Try Again**: Click "Validate Another Prompt" to start over
+### Basic Flow
 
-### Example Prompt
+1. **Enter Prompt**: Type your prompt in the text area
+2. **Click "Sequential Analysis"**: Start the intelligent processing
+3. **Watch Live Steps**: See each router decision and action execution
+4. **Review Results**: View validation, extracted context, and improvements
+5. **Use Improved Prompt**: Click to replace your prompt with the enhanced version
+
+### **NEW: Persistent Features** 💾
+
+#### **Automatic Context Saving**
+
+- All extracted context is **automatically saved** to localStorage
+- Context **accumulates over time** - each prompt adds to your profile
+- Tech stack, preferences, and goals build up naturally
+- Used for better prompt improvements in future
+
+#### **Prompt History** 📜
+
+- Every prompt is **automatically saved with timestamp**
+- Access via **"📜 History"** button in header
+- **Search** prompts by content or tags
+- **Filter** by specific tags
+- **Reuse** any past prompt with one click
+- **Export** your entire history as JSON
+- See full analysis results for each prompt
+
+#### **History Panel Features**
+
+- 🔍 Real-time search across all prompts
+- 🏷️ Tag filtering for organization
+- 📊 Statistics (total prompts, validated, improved)
+- 🧩 Expandable entries with full details
+- 🧠 Router decision timeline for each prompt
+- ✨ One-click prompt reuse
+- 💾 Export/import functionality
+- 🗑️ Delete individual or clear all
+
+### Example Prompts
+
+**Simple Validation:**
 
 ```
-You are an expert software engineer. Analyze the following code and:
-1. Identify any bugs or issues
-2. Suggest improvements
-3. Provide refactored code
-4. Explain your reasoning step by step
-
-If you're unsure about anything, ask for clarification before proceeding.
+Analyze this code and identify bugs. Be thorough and explain your reasoning.
 ```
 
-### Expected Output
+**With Context:**
 
-```json
-{
-  "explicit_reasoning": true,
-  "structured_output": true,
-  "tool_separation": false,
-  "conversation_loop": true,
-  "instructional_framing": true,
-  "internal_self_checks": false,
-  "reasoning_type_awareness": true,
-  "fallbacks": true,
-  "overall_clarity": "Excellent structure with clear instructions and fallback handling."
-}
+```
+I'm a Python developer working on a FastAPI backend. Help me implement
+JWT authentication with proper error handling and security best practices.
+```
+
+**Complex Task:**
+
+```
+I work with React, TypeScript, and Tailwind. I'm building a real-time
+chat application. Create a component for message display with typing
+indicators, read receipts, and emoji support.
 ```
 
 ## ⚙️ Configuration
 
-### API Settings
+### AI Provider Settings
 
-The extension stores settings in Chrome storage (or localStorage):
+Supported providers:
 
-- **API Key**: Your Gemini API key
-- **API URL**: Default is Gemini's endpoint, but you can use custom providers
+- **Gemini** (Google): Fast, reliable, generous free tier
+- **OpenAI**: GPT-4o, GPT-4o-mini
+- **Groq**: Ultra-fast Llama models
+- **Custom**: Any OpenAI-compatible API
 
-### Custom LLM Providers
+### Router Configuration
 
-To use a different LLM provider:
-
-1. Click Settings
-2. Update API URL to your provider's endpoint
-3. Ensure your API key is compatible
-4. Save settings
-
-## 🛠️ Development
-
-### Available Scripts
-
-```bash
-npm run dev          # Start dev server (web app)
-npm run build        # Build for production
-npm run build:watch  # Build and watch for changes
-npm run preview      # Preview production build
-npm run lint         # Run ESLint
+```typescript
+// In llmRouter.ts
+maxIterations = 15; // Safety limit for loops
 ```
 
-### Hot Reload for Extension
+### Extraction Specificity
 
-```bash
-# Terminal 1: Watch mode
-npm run build:watch
+Each extraction function is focused and specific:
 
-# Terminal 2: Web preview
-npm run dev
+- Personal info: name, location, goals, interests
+- Professional: job, tech stack, domain, projects
+- Task: current work, specific tasks
+- External: tools, frameworks, APIs, libraries
+- Tone: style preferences, verbosity
+
+## 🎨 UI Features
+
+### Live Steps Display
+
+- Real-time progress visualization
+- Each step shows:
+  - Step number and action name
+  - Router's reasoning
+  - Success/error status
+  - Progress estimate
+
+### Modern Design
+
+- Dark glassmorphic theme
+- Smooth animations
+- Icon-based navigation
+- Color-coded results
+- Responsive layout
+
+### Results Presentation
+
+- Validation scores with visual indicators
+- Context cards with categorized info
+- Improved prompt with diff highlighting
+- Reasoning and improvements breakdown
+
+## 🔄 Sequential vs Parallel
+
+### Old Approach (Removed)
+
+```
+❌ One big decision → Execute all → Done
+   - All-or-nothing
+   - No adaptation
+   - Wastes API calls
 ```
 
-Then reload extension in `chrome://extensions` after changes.
+### New Approach (Current)
 
-## 🌐 Dual Mode Support
+```
+✅ Decide → Execute → Decide → Execute → ...
+   - Step-by-step intelligence
+   - Adapts to content
+   - Only runs what's needed
+```
 
-The app automatically detects its environment:
+## 🚀 Performance
 
-- **Chrome Extension**: 500px wide, 600px tall popup
-- **Web App**: Full responsive layout
+### API Efficiency
 
-Both modes use the same codebase with conditional styling.
+- **Typical prompts**: 5-8 LLM calls
+- **Simple prompts**: 2-3 calls
+- **Complex prompts**: 8-12 calls
+- **Maximum**: 16 calls (safety limit)
+
+### Execution Time
+
+- **Simple**: ~5-10 seconds
+- **Typical**: ~15-25 seconds
+- **Complex**: ~30-45 seconds
+
+### Cost Optimization
+
+- Router calls are lightweight (small tokens)
+- Only extracts relevant information
+- Skips unnecessary steps
+- Accumulates context efficiently
+
+## 🐛 Debugging
+
+### Enable Console Logs
+
+Router and orchestrator log decisions and results to console.
+
+### Common Issues
+
+**Router loops?**
+
+- Check max iteration limit
+- Verify "done" action is being returned
+- Review router prompt clarity
+
+**Missing extractions?**
+
+- Router decides based on content
+- Not all prompts need all extractions
+- Check router's reasoning in UI
+
+**Slow performance?**
+
+- Too many sequential calls
+- Consider adjusting router prompt
+- Check API response times
+
+## 📚 Documentation
+
+- **[SEQUENTIAL_ROUTER.md](./SEQUENTIAL_ROUTER.md)** - Complete router architecture
+- **[PERSISTENCE_FEATURES.md](./PERSISTENCE_FEATURES.md)** - Context & history persistence guide ⭐ NEW
+- **[ARCHITECTURE.md](./ARCHITECTURE.md)** - System design deep dive
+- **[CONTEXT_FEATURE.md](./CONTEXT_FEATURE.md)** - Context extraction guide
+- **[GETTING_STARTED.md](./GETTING_STARTED.md)** - Step-by-step setup
 
 ## 🔒 Privacy
 
-- No data is sent to external servers except your LLM provider
+- No data sent anywhere except your chosen LLM provider
 - API keys stored locally (Chrome storage or localStorage)
-- No tracking or analytics
-- Open source and transparent
+- No tracking, analytics, or telemetry
+- All processing happens client-side
+- Open source and auditable
+
+## 💡 Tips
+
+1. **Be specific in prompts** - More context = better routing decisions
+2. **Watch the steps** - Learn how the router thinks
+3. **Use improved prompts** - They incorporate all your context
+4. **Build context over time** - System remembers your preferences
+5. **Clear context when needed** - Start fresh for different projects
 
 ## 🤝 Contributing
 
-This is a minimal implementation. Feel free to extend:
+Ideas to extend:
 
-- Add more validation criteria
-- Support additional LLM providers
-- Improve UI/UX
+- Add more extraction categories
+- Improve router decision-making
 - Add prompt templates
 - Export/import functionality
+- Context visualization dashboard
+- Multi-language support
 
 ## 📄 License
 
-MIT License - feel free to use and modify
+MIT License - free to use and modify
 
 ## 🙏 Credits
 
 - Architecture inspired by **base-truths** project
-- Powered by Google Gemini API
+- Sequential routing concept for intelligent processing
+- Powered by Google Gemini API (and compatible APIs)
 - Built with React + Vite + Tailwind CSS
 
 ---
 
-**Built for validating prompts and improving AI interactions** 🚀
+**An intelligent prompt analysis system that thinks for itself** 🧠✨
+
+For detailed technical documentation, see [SEQUENTIAL_ROUTER.md](./SEQUENTIAL_ROUTER.md)
