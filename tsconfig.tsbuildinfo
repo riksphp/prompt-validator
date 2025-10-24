@@ -1,0 +1,1 @@
+{"root":["./src/main.tsx","./src/components/home.tsx","./src/components/settingspage.tsx","./src/services/aisettingsstorage.ts","./src/services/llmclient.ts","./src/types/chrome.d.ts","./src/types/index.ts"],"version":"5.9.3"}
