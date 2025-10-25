@@ -202,19 +202,26 @@ The AI will automatically decide what to analyze, extract context, validate qual
 
           {error && <div className={styles.error}>{error}</div>}
 
-          {currentStep && orchestrationMutation.isPending && (
-            <div className={styles.status}>{currentStep}</div>
-          )}
-
           <button
             onClick={handleIntelligentProcessing}
             disabled={orchestrationMutation.isPending}
             className={styles.primaryButton}
           >
-            {orchestrationMutation.isPending
-              ? "Processing..."
-              : "Analyze Prompt"}
+            {orchestrationMutation.isPending ? (
+              <span>
+                <span className={styles.loadingIcon}>⏳</span>
+                Analyzing...
+              </span>
+            ) : (
+              "Analyze Prompt"
+            )}
           </button>
+
+          {orchestrationMutation.isPending && (
+            <div className={styles.loadingBelow}>
+              {currentStep || "Starting analysis..."}
+            </div>
+          )}
 
           <div className={styles.infoSection}>
             <h3>How It Works</h3>

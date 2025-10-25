@@ -208,6 +208,25 @@
   cursor: not-allowed;
 }
 
+/* Loading icon inside button */
+.loadingIcon {
+  display: inline-block;
+  margin-right: 0.5rem;
+  animation: spin 1.2s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Loading text below button */
+.loadingBelow {
+  margin-top: 0.5rem;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+}
+
 /* Info Section */
 .infoSection {
   margin-top: 2rem;
