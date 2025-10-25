@@ -5,6 +5,7 @@ import {
   getProviderDefaults,
   type AISettings,
 } from "../services/aiSettingsStorage";
+import { useTheme } from "../hooks/useTheme";
 import styles from "./SettingsPage.module.css";
 
 interface SettingsPageProps {
@@ -12,6 +13,7 @@ interface SettingsPageProps {
 }
 
 const SettingsPage = ({ onClose }: SettingsPageProps) => {
+  const { theme, toggleTheme } = useTheme();
   const [settings, setSettings] = useState<AISettings>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -107,18 +109,19 @@ const SettingsPage = ({ onClose }: SettingsPageProps) => {
   }
 
   const providers = [
-    { value: "gemini", label: "🔷 Google Gemini", icon: "🔷" },
-    { value: "openai", label: "🤖 OpenAI", icon: "🤖" },
-    { value: "groq", label: "⚡ Groq", icon: "⚡" },
-    { value: "custom", label: "🔧 Custom API", icon: "🔧" },
+    { value: "gemini", label: "Google Gemini" },
+    { value: "openai", label: "OpenAI" },
+    { value: "groq", label: "Groq" },
+    { value: "custom", label: "Custom API" },
   ];
 
   if (loading) {
     return (
-      <div className={styles.container}>
-        <div className={styles.loading}>
-          <div className={styles.spinner}></div>
-          <p>Loading AI settings...</p>
+      <div className={styles.overlay}>
+        <div className={styles.container}>
+          <div className={styles.loading}>
+            <p>Loading settings...</p>
+          </div>
         </div>
       </div>
     );
@@ -129,19 +132,26 @@ const SettingsPage = ({ onClose }: SettingsPageProps) => {
       <div className={styles.container} onClick={(e) => e.stopPropagation()}>
         <div className={styles.header}>
           <button className={styles.backButton} onClick={onClose}>
-            ←
+            ← Back
           </button>
           <div className={styles.headerContent}>
-            <h1 className={styles.title}>🤖 AI Settings</h1>
+            <h1 className={styles.title}>AI Settings</h1>
             <p className={styles.subtitle}>
-              Configure your AI model settings for prompt validation
+              Configure your AI model for prompt analysis
             </p>
           </div>
+          <button
+            onClick={toggleTheme}
+            className={styles.themeToggle}
+            title={`Switch to ${theme === "light" ? "dark" : "light"} mode`}
+          >
+            {theme === "light" ? "🌙" : "☀️"}
+          </button>
         </div>
 
         <div className={styles.settingsForm}>
           <div className={styles.section}>
-            <h3 className={styles.sectionTitle}>⚙️ Provider Configuration</h3>
+            <h3 className={styles.sectionTitle}>Provider Configuration</h3>
 
             <div className={styles.field}>
               <label className={styles.label} htmlFor="provider">
@@ -160,14 +170,13 @@ const SettingsPage = ({ onClose }: SettingsPageProps) => {
                 ))}
               </select>
               <p className={styles.fieldHint}>
-                Choose your preferred AI provider. Each has different pricing
-                and capabilities.
+                Choose your preferred AI provider
               </p>
             </div>
 
             <div className={styles.field}>
               <label className={styles.label} htmlFor="apiKey">
-                🔑 API Key *
+                API Key <span className={styles.required}>*</span>
               </label>
               <input
                 id="apiKey"
@@ -186,14 +195,13 @@ const SettingsPage = ({ onClose }: SettingsPageProps) => {
                 }
               />
               <p className={styles.fieldHint}>
-                Your API key for authentication. This is stored securely and
-                never shared.
+                Your API key for authentication
               </p>
             </div>
 
             <div className={styles.field}>
               <label className={styles.label} htmlFor="apiUrl">
-                🌐 API URL *
+                API URL <span className={styles.required}>*</span>
               </label>
               <input
                 id="apiUrl"
@@ -204,13 +212,13 @@ const SettingsPage = ({ onClose }: SettingsPageProps) => {
                 placeholder="https://api.example.com/v1/chat/completions"
               />
               <p className={styles.fieldHint}>
-                The API endpoint URL for your chosen provider.
+                The API endpoint URL for your provider
               </p>
             </div>
 
             <div className={styles.field}>
               <label className={styles.label} htmlFor="modelName">
-                🎯 Model Name
+                Model Name
               </label>
               <input
                 id="modelName"
@@ -229,38 +237,32 @@ const SettingsPage = ({ onClose }: SettingsPageProps) => {
                 }
               />
               <p className={styles.fieldHint}>
-                The specific model to use for AI requests. Leave empty for
-                provider default.
+                Specific model to use (optional)
               </p>
             </div>
           </div>
 
           <div className={styles.section}>
-            <h3 className={styles.sectionTitle}>🧪 Connection Test</h3>
+            <h3 className={styles.sectionTitle}>Connection Test</h3>
             <p className={styles.sectionDescription}>
-              Test your configuration to ensure everything is working correctly.
+              Verify your configuration is working correctly
             </p>
 
             <div className={styles.testSection}>
               <button
-                className={`${styles.testButton} ${
-                  testingConnection ? styles.testing : ""
-                }`}
+                className={styles.testButton}
                 onClick={testConnection}
                 disabled={
                   testingConnection || !settings.apiKey || !settings.apiUrl
                 }
               >
-                {testingConnection ? "🔄 Testing..." : "🧪 Test Connection"}
+                {testingConnection ? "Testing..." : "Test Connection"}
               </button>
 
               {connectionStatus && (
                 <div
                   className={`${styles.connectionResult} ${styles[connectionStatus]}`}
                 >
-                  <span className={styles.statusIcon}>
-                    {connectionStatus === "success" ? "✅" : "❌"}
-                  </span>
                   <span className={styles.statusMessage}>
                     {connectionMessage}
                   </span>
@@ -275,7 +277,7 @@ const SettingsPage = ({ onClose }: SettingsPageProps) => {
               onClick={handleSave}
               disabled={saving || !settings.apiKey || !settings.apiUrl}
             >
-              {saving ? "💾 Saving..." : "💾 Save Settings"}
+              {saving ? "Saving..." : "Save Settings"}
             </button>
 
             <button className={styles.cancelButton} onClick={onClose}>
@@ -286,10 +288,10 @@ const SettingsPage = ({ onClose }: SettingsPageProps) => {
 
         <div className={styles.footer}>
           <div className={styles.providerHelp}>
-            <h4>📚 Need API Keys?</h4>
+            <h4>Get API Keys</h4>
             <ul>
               <li>
-                <strong>Google Gemini:</strong> Get your key from{" "}
+                <strong>Google Gemini:</strong>{" "}
                 <a
                   href="https://makersuite.google.com/app/apikey"
                   target="_blank"
@@ -299,7 +301,7 @@ const SettingsPage = ({ onClose }: SettingsPageProps) => {
                 </a>
               </li>
               <li>
-                <strong>OpenAI:</strong> Get your key from{" "}
+                <strong>OpenAI:</strong>{" "}
                 <a
                   href="https://platform.openai.com/api-keys"
                   target="_blank"
@@ -309,7 +311,7 @@ const SettingsPage = ({ onClose }: SettingsPageProps) => {
                 </a>
               </li>
               <li>
-                <strong>Groq:</strong> Get your key from{" "}
+                <strong>Groq:</strong>{" "}
                 <a
                   href="https://console.groq.com/keys"
                   target="_blank"

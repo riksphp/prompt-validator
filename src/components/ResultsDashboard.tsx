@@ -5,6 +5,7 @@ import {
   getActionDisplayName,
 } from "../services/intelligentOrchestrator";
 import { PromptValidationResult } from "../types";
+import { useTheme } from "../hooks/useTheme";
 import styles from "./ResultsDashboard.module.css";
 
 interface ResultsDashboardProps {
@@ -20,6 +21,7 @@ export default function ResultsDashboard({
   onBack,
   onUseImprovedPrompt,
 }: ResultsDashboardProps) {
+  const { theme, toggleTheme } = useTheme();
   const [expandedSections, setExpandedSections] = useState({
     steps: true,
     validation: true,
@@ -434,22 +436,21 @@ export default function ResultsDashboard({
           ← Back
         </button>
         <div className={styles.headerContent}>
-          <h1 className={styles.dashboardTitle}>
-            <span className={styles.titleIcon}>📊</span>
-            Analysis Dashboard
-          </h1>
-          <div className={styles.statusBadge}>
-            {getOrchestrationStatus(result)}
-          </div>
+          <h1 className={styles.dashboardTitle}>Analysis Results</h1>
+          <div className={styles.status}>{getOrchestrationStatus(result)}</div>
         </div>
+        <button
+          onClick={toggleTheme}
+          className={styles.themeToggle}
+          title={`Switch to ${theme === "light" ? "dark" : "light"} mode`}
+        >
+          {theme === "light" ? "🌙" : "☀️"}
+        </button>
       </div>
 
       <div className={styles.originalPromptCard}>
-        <h4 className={styles.originalPromptTitle}>
-          <span className={styles.promptIcon}>📝</span>
-          Original Prompt
-        </h4>
-        <div className={styles.originalPromptText}>{prompt}</div>
+        <h4 className={styles.sectionTitle}>Original Prompt</h4>
+        <div className={styles.promptText}>{prompt}</div>
       </div>
 
       <div className={styles.dashboardContent}>
