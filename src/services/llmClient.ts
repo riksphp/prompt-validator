@@ -120,8 +120,19 @@ Return ONLY the JSON object, no other text.`;
     });
 
     if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`API error: ${response.status} - ${errorText}`);
+      // Create error with status code for React Query retry logic
+      const error: any = new Error(`API error: ${response.status}`);
+      error.status = response.status;
+      error.response = { status: response.status };
+
+      if (response.status === 429) {
+        error.message =
+          "Rate limit exceeded. Please wait before making more requests.";
+      } else if (response.status === 503) {
+        error.message = "Service temporarily overloaded. Retrying...";
+      }
+
+      throw error;
     }
 
     const data = await response.json();
@@ -243,7 +254,9 @@ export async function generateImprovedPrompt(
 Given the user's original prompt and their accumulated context/profile, generate an improved version of the prompt.
 
 **User Context:**
+"""
 ${contextSummary}
+"""
 
 **Original Prompt:**
 """
@@ -288,7 +301,19 @@ Return ONLY the JSON object, no other text.`;
     });
 
     if (!response.ok) {
-      throw new Error(`API error: ${response.status}`);
+      // Create error with status code for React Query retry logic
+      const error: any = new Error(`API error: ${response.status}`);
+      error.status = response.status;
+      error.response = { status: response.status };
+
+      if (response.status === 429) {
+        error.message =
+          "Rate limit exceeded. Please wait before making more requests.";
+      } else if (response.status === 503) {
+        error.message = "Service temporarily overloaded. Retrying...";
+      }
+
+      throw error;
     }
 
     const data = await response.json();

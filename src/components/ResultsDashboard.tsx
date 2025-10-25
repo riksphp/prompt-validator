@@ -5,6 +5,7 @@ import {
   getActionDisplayName,
 } from "../services/intelligentOrchestrator";
 import { PromptValidationResult } from "../types";
+import { useTheme } from "../hooks/useTheme";
 import styles from "./ResultsDashboard.module.css";
 
 interface ResultsDashboardProps {
@@ -20,11 +21,13 @@ export default function ResultsDashboard({
   onBack,
   onUseImprovedPrompt,
 }: ResultsDashboardProps) {
+  const { theme, toggleTheme } = useTheme();
   const [expandedSections, setExpandedSections] = useState({
-    steps: true,
+    steps: false,
     validation: true,
     context: true,
     improved: true,
+    original: false,
   });
 
   const toggleSection = (section: keyof typeof expandedSections) => {
@@ -427,6 +430,33 @@ export default function ResultsDashboard({
     );
   };
 
+  const renderOriginalPrompt = () => {
+    if (!prompt) return null;
+
+    return (
+      <div className={styles.dashboardCard}>
+        <div
+          className={styles.cardHeader}
+          onClick={() => toggleSection("original")}
+        >
+          <h3 className={styles.cardTitle}>
+            <span className={styles.cardIcon}>📝</span>
+            Original Prompt
+          </h3>
+          <button className={styles.toggleButton}>
+            {expandedSections.original ? "▼" : "▶"}
+          </button>
+        </div>
+
+        {expandedSections.original && (
+          <div className={styles.cardContent}>
+            <div className={styles.promptText}>{prompt}</div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div className={styles.dashboard}>
       <div className={styles.dashboardHeader}>
@@ -434,29 +464,24 @@ export default function ResultsDashboard({
           ← Back
         </button>
         <div className={styles.headerContent}>
-          <h1 className={styles.dashboardTitle}>
-            <span className={styles.titleIcon}>📊</span>
-            Analysis Dashboard
-          </h1>
-          <div className={styles.statusBadge}>
-            {getOrchestrationStatus(result)}
-          </div>
+          <h1 className={styles.dashboardTitle}>Analysis Results</h1>
+          <div className={styles.status}>{getOrchestrationStatus(result)}</div>
         </div>
-      </div>
-
-      <div className={styles.originalPromptCard}>
-        <h4 className={styles.originalPromptTitle}>
-          <span className={styles.promptIcon}>📝</span>
-          Original Prompt
-        </h4>
-        <div className={styles.originalPromptText}>{prompt}</div>
+        <button
+          onClick={toggleTheme}
+          className={styles.themeToggle}
+          title={`Switch to ${theme === "light" ? "dark" : "light"} mode`}
+        >
+          {theme === "light" ? "🌙" : "☀️"}
+        </button>
       </div>
 
       <div className={styles.dashboardContent}>
-        {renderLiveSteps()}
         {renderValidationResult()}
-        {renderExtractedContext()}
         {renderImprovedPrompt()}
+        {renderOriginalPrompt()}
+        {renderExtractedContext()}
+        {renderLiveSteps()}
 
         {result.errors && result.errors.length > 0 && (
           <div className={styles.errorsCard}>

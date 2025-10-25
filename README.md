@@ -15,6 +15,30 @@ A Chrome Extension and Web App with **sequential AI-powered analysis** - where a
 - 🎨 **Modern UI**: Dark glassmorphic design with live step visualization
 - 🔧 **Dual Mode**: Works as Chrome Extension AND standalone web app
 
+## 🎯 Router Quality - All Checks Passing!
+
+The router prompt has been validated and **passes all quality checks**:
+
+```
+✅ Explicit Reasoning          ✅ Internal Self-Checks
+✅ Structured Output           ✅ Reasoning Type Awareness
+✅ Tool Separation             ✅ Fallbacks
+✅ Conversation Loop           ✨ Production Ready
+✅ Instructional Framing
+```
+
+**Key Features:**
+
+- 🧠 **Reasoning Type Awareness**: LLM declares its reasoning approach (analytical, sequential, pattern-matching, contextual)
+- 🔍 **Pattern Matching**: Prevents duplicate actions by recognizing similar completed actions
+- 🛡️ **Edge Case Handling**: Considers potential issues before making decisions
+- 📊 **Confidence Calibration**: Honest confidence scores (0.0-1.0) trigger fallbacks when needed
+- ⚠️ **Anti-Hallucination**: Warns against making up data, extracts only what's present
+
+See [ROUTER_PROMPT_ENHANCEMENT.md](./docs/ROUTER_PROMPT_ENHANCEMENT.md) for full details.
+
+---
+
 ## 🧠 Sequential Router Architecture
 
 ### **How It Works**
@@ -119,7 +143,7 @@ prompt-validator/
 ├── src/
 │   ├── components/
 │   │   ├── Home.tsx                    # Main UI with live steps
-│   │   ├── Home.module.css             # Modern dark theme
+│   │   ├── Home.module.css             # Minimalist themes
 │   │   ├── SettingsPage.tsx            # Comprehensive settings
 │   │   └── SettingsPage.module.css     # Settings styling
 │   ├── services/
@@ -136,10 +160,8 @@ prompt-validator/
 │   └── styles.css                      # Global styles
 ├── public/
 │   └── manifest.json                   # Chrome Extension manifest
-├── SEQUENTIAL_ROUTER.md                # 📖 Router architecture docs
-├── ARCHITECTURE.md                     # 📖 System architecture
-├── CONTEXT_FEATURE.md                  # 📖 Context extraction docs
-└── README.md                           # This file
+├── docs/                                # All documentation lives here
+└── README.md                            # Overview and docs index
 ```
 
 ## 🔧 Architecture
@@ -365,13 +387,38 @@ Router and orchestrator log decisions and results to console.
 - Consider adjusting router prompt
 - Check API response times
 
-## 📚 Documentation
+## 📚 Documentation (docs/)
 
-- **[SEQUENTIAL_ROUTER.md](./SEQUENTIAL_ROUTER.md)** - Complete router architecture
-- **[PERSISTENCE_FEATURES.md](./PERSISTENCE_FEATURES.md)** - Context & history persistence guide ⭐ NEW
-- **[ARCHITECTURE.md](./ARCHITECTURE.md)** - System design deep dive
-- **[CONTEXT_FEATURE.md](./CONTEXT_FEATURE.md)** - Context extraction guide
-- **[GETTING_STARTED.md](./GETTING_STARTED.md)** - Step-by-step setup
+- Architecture & Flows
+
+  - [ARCHITECTURE.md](./docs/ARCHITECTURE.md)
+  - [SEQUENTIAL_ROUTER.md](./docs/SEQUENTIAL_ROUTER.md)
+  - [ROUTER_IMPROVEMENTS.md](./docs/ROUTER_IMPROVEMENTS.md)
+  - [ROUTER_PROMPT_ENHANCEMENT.md](./docs/ROUTER_PROMPT_ENHANCEMENT.md)
+
+- Features
+
+  - [CONTEXT_FEATURE.md](./docs/CONTEXT_FEATURE.md)
+  - [PERSISTENCE_FEATURES.md](./docs/PERSISTENCE_FEATURES.md)
+  - [UI_IMPROVEMENTS.md](./docs/UI_IMPROVEMENTS.md)
+  - [MINIMALIST_DESIGN.md](./docs/MINIMALIST_DESIGN.md)
+  - [SETTINGS_PAGE_UPDATE.md](./docs/SETTINGS_PAGE_UPDATE.md)
+
+- Reliability & Performance
+
+  - [CIRCUIT_BREAKER.md](./docs/CIRCUIT_BREAKER.md)
+  - [CIRCUIT_BREAKER_FIX.md](./docs/CIRCUIT_BREAKER_FIX.md)
+  - [REACT_QUERY_IMPLEMENTATION.md](./docs/REACT_QUERY_IMPLEMENTATION.md)
+  - [LLM_OPTIMIZATION.md](./docs/LLM_OPTIMIZATION.md)
+
+- Onboarding & Summaries
+  - [GETTING_STARTED.md](./docs/GETTING_STARTED.md)
+  - [QUICKSTART.md](./docs/QUICKSTART.md)
+  - [FEATURE_SUMMARY.md](./docs/FEATURE_SUMMARY.md)
+  - [PROJECT_SUMMARY.md](./docs/PROJECT_SUMMARY.md)
+  - [REFACTORING_SUMMARY.md](./docs/REFACTORING_SUMMARY.md)
+  - [SEQUENTIAL_UPDATE_SUMMARY.md](./docs/SEQUENTIAL_UPDATE_SUMMARY.md)
+  - [FINAL_SUMMARY.md](./docs/FINAL_SUMMARY.md)
 
 ## 🔒 Privacy
 
@@ -415,4 +462,4 @@ MIT License - free to use and modify
 
 **An intelligent prompt analysis system that thinks for itself** 🧠✨
 
-For detailed technical documentation, see [SEQUENTIAL_ROUTER.md](./SEQUENTIAL_ROUTER.md)
+For detailed technical documentation, see [SEQUENTIAL_ROUTER.md](./docs/SEQUENTIAL_ROUTER.md)

@@ -1,16 +1,8 @@
 import { validatePrompt, generateImprovedPrompt } from "./llmClient";
-import {
-  routePrompt,
-  RouterDecision,
-  extractPersonalInfo,
-  extractProfessionalInfo,
-  extractTaskContext,
-  extractTonePreferences,
-  extractExternalContext,
-  extractTags,
-} from "./llmRouter";
+import { routePrompt, RouterDecision } from "./llmRouter";
 import { updateUserContext, getContextSummary } from "./contextStorage";
 import { savePromptToHistory } from "./promptHistoryStorage";
+import { circuitBreaker, CircuitBreakerOpenError } from "../lib/circuitBreaker";
 import { ExtractedContext } from "../types/context";
 
 export interface OrchestrationStep {
@@ -53,6 +45,15 @@ export async function orchestratePromptProcessing(
     while (iteration < maxIterations) {
       iteration++;
 
+      // 🚫 CRITICAL: Check circuit breaker BEFORE each iteration
+      if (circuitBreaker.isCircuitOpen()) {
+        const remainingTime = circuitBreaker.getRemainingCooldown();
+        console.error(
+          `🚫 Circuit breaker is OPEN - stopping orchestration. Wait ${remainingTime}s`
+        );
+        throw new CircuitBreakerOpenError(remainingTime);
+      }
+
       // Step 1: Ask router for next action
       const decision = await routePrompt(prompt, completedActions);
 
@@ -80,48 +81,57 @@ export async function orchestratePromptProcessing(
       try {
         switch (decision.nextAction) {
           case "validate":
+            // Only validation and improvement need separate LLM calls
             step.result = await validatePrompt(prompt);
             result.validationResult = step.result;
             break;
 
           case "extractPersonal":
-            step.result = await extractPersonalInfo(prompt);
+            // Data already extracted by router in decision.extractedData
+            step.result = decision.extractedData || {};
             extractedContextParts.personalInfo = step.result;
             break;
 
           case "extractProfessional":
-            step.result = await extractProfessionalInfo(prompt);
+            // Data already extracted by router
+            step.result = decision.extractedData || {};
             extractedContextParts.professionalInfo = step.result;
             break;
 
           case "extractTask":
-            step.result = await extractTaskContext(prompt);
+            // Data already extracted by router
+            step.result = decision.extractedData || {};
             extractedContextParts.taskContext = step.result;
             break;
 
           case "extractIntent":
-            // For intent, we can reuse task extraction or create a dedicated one
-            // For now, let's extract it as part of task
-            step.result = { primaryIntent: "Extracted from prompt" };
+            // Data already extracted by router
+            step.result = decision.extractedData || {};
             extractedContextParts.intent = step.result;
             break;
 
           case "extractTone":
-            step.result = await extractTonePreferences(prompt);
+            // Data already extracted by router
+            step.result = decision.extractedData || {};
             extractedContextParts.tonePersonality = step.result;
             break;
 
           case "extractExternal":
-            step.result = await extractExternalContext(prompt);
+            // Data already extracted by router
+            step.result = decision.extractedData || {};
             extractedContextParts.externalContext = step.result;
             break;
 
           case "extractTags":
-            step.result = await extractTags(prompt);
-            extractedContextParts.tags = step.result;
+            // Data already extracted by router (array of tags)
+            step.result = decision.extractedData || [];
+            extractedContextParts.tags = Array.isArray(decision.extractedData)
+              ? decision.extractedData
+              : decision.extractedData?.tags || [];
             break;
 
           case "generateImprovement":
+            // Generate improvement needs LLM call with context
             const contextSummary = await getContextSummary();
             step.result = await generateImprovedPrompt(prompt, contextSummary);
             result.improvedPrompt = step.result;
@@ -136,6 +146,31 @@ export async function orchestratePromptProcessing(
       } catch (error: any) {
         step.error = error.message;
         result.errors.push(`${decision.nextAction} failed: ${error.message}`);
+
+        // 🚫 CRITICAL: Check if it's a rate limit or circuit breaker error
+        // If so, STOP the orchestration immediately
+        const errorMsg = error.message || "";
+        const isRateLimitError =
+          error instanceof CircuitBreakerOpenError ||
+          errorMsg.includes("429") ||
+          errorMsg.includes("Rate limit") ||
+          errorMsg.includes("Circuit breaker") ||
+          error.status === 429;
+
+        if (isRateLimitError) {
+          console.error(
+            "🚫 Rate limit/circuit breaker error - stopping orchestration immediately"
+          );
+
+          // Add the failed step
+          result.steps.push(step);
+          if (onStepUpdate) {
+            onStepUpdate(step);
+          }
+
+          // Re-throw to exit the orchestration
+          throw error;
+        }
       }
 
       // Add step to results
